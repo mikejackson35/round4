@@ -62,10 +62,10 @@ data = losers_df.copy() # the 554 instances where a player was leading or within
 
 # CHART INPUTS ##############################################
 
-stroke_delta = int(0)       # stroke_delta chose 0, 1, or 2
-weeks_prior = int(24)       # weeks_prior chose any amount
+stroke_delta = int(1)       # stroke_delta chose 0, 1, or 2
+weeks_prior = int(40)       # weeks_prior chose any amount
 weeks_after = int(6)        # weeks_after chose any amount
-rank_bin = 'bin_100'        # rank_bin chose 'bin_40' or 'bin_100'
+rank_bin = 'bin_40'        # rank_bin chose 'bin_40' or 'bin_100'
 min_instances = int(2)      # min_instances chose any number > 0
 
 #############################################################
@@ -161,7 +161,7 @@ fig = px.scatter(round(custom_chart[
                  size_max = 20,
                  hover_name='player_name',
                  custom_data=['player_name', 'count','datagolf_rank','delta_sg_total','career_wins'],
-                 height = 750,
+                 height = 700,
                  width = 900
                 )
 
@@ -181,15 +181,22 @@ fig.update_layout(legend_title="Datagolf Rank")
 
 # format hover labels
 fig.update_layout(hoverlabel=dict(font_size=15,font_family="Rockwell"))
+# fig.update_traces(hovertemplate=
+#                     "<b>%{customdata[0]}</b> \
+#                     <br>Count: %{customdata[1]}</b> \
+#                     <br>=================</b> \
+#                     <br>SG Before:%{x:>20}<br>SG After:%{y:>23}</b> \
+#                     <br><b>Change:%{customdata[3]:>23}</b> \
+#                     <br>=================</b> \
+#                     <br>Wins Since 2017:%{customdata[4]:>10}</b> \
+#                     <br>Data Golf Rank:%{customdata[2]:>13}")
+
 fig.update_traces(hovertemplate=
                     "<b>%{customdata[0]}</b> \
                     <br>Count: %{customdata[1]}</b> \
                     <br>=================</b> \
                     <br>SG Before:%{x:>20}<br>SG After:%{y:>23}</b> \
-                    <br><b>Change:%{customdata[3]:>23}</b> \
-                    <br>=================</b> \
-                    <br>Wins Since 2017:%{customdata[4]:>10}</b> \
-                    <br>Data Golf Rank:%{customdata[2]:>13}")
+                    <br><b>Change:%{customdata[3]:>23}</b>")                    
 
 ###################################################################################################
 

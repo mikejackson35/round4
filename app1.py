@@ -49,23 +49,12 @@ stats['bin_100'] = pd.cut(stats['datagolf_rank'], bins=bins100, labels=labels100
 leaderboard_deltas_after_3['bin_100'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins100, labels=labels100)
 leaderboard_deltas_after_3['bin_40'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins40, labels=labels40)
 
-# remove winners, whittle down to 2 strokes delta, add loser_key
+# remove winners, whittle down to 2 strokes delta maximum
 losers_df = leaderboard_deltas_after_3[(leaderboard_deltas_after_3.r4_delta <= 2) & (leaderboard_deltas_after_3.finish_pos > 1)].reset_index(drop=True)
-losers_df['loser_key'] = list(zip(losers_df.player_name.astype(str), losers_df.unique_event_id.astype('category')))
-
-# prior and post dates for search
-losers_df.event_completed = pd.to_datetime(losers_df.event_completed)
-losers_df['prior_16'] = losers_df['event_completed'] - pd.Timedelta(weeks=16)
-losers_df['prior_24'] = losers_df['event_completed'] - pd.Timedelta(weeks=24)
-losers_df['prior_32'] = losers_df['event_completed'] - pd.Timedelta(weeks=32)
-
-losers_df['post_2'] = losers_df['event_completed'] + pd.Timedelta(weeks=2)
-losers_df['post_4'] = losers_df['event_completed'] + pd.Timedelta(weeks=4)
-losers_df['post_8'] = losers_df['event_completed'] + pd.Timedelta(weeks=8)
 
 # # remove now un-needed columns and fix dtypes
 losers_df.drop(columns=['round_score','round_num','cum_sum','cum_sum_min'], axis=1, inplace=True)
-#losers_df.event_completed = pd.to_datetime(losers_df.event_completed)
+losers_df.event_completed = pd.to_datetime(losers_df.event_completed)
 losers_df.finish_pos = losers_df.finish_pos.astype('int64')
 stats.event_completed = pd.to_datetime(stats.event_completed)
 
@@ -73,17 +62,11 @@ data = losers_df.copy() # the 554 instances where a player was leading or within
 
 # CHART INPUTS ##############################################
 
-# stroke_delta chose 0, 1, or 2
-# weeks_prior chose any amount
-# weeks_after chose any amount
-# rank_bin chose 'bin_40' or 'bin_100'
-# min_instances chose any number > 0
-
-stroke_delta = int(1)
-weeks_prior = int(24)
-weeks_after = int(4)
-rank_bin = 'bin_100'
-min_instances = int(3)
+stroke_delta = int(0)       # stroke_delta chose 0, 1, or 2
+weeks_prior = int(24)       # weeks_prior chose any amount
+weeks_after = int(6)        # weeks_after chose any amount
+rank_bin = 'bin_100'        # rank_bin chose 'bin_40' or 'bin_100'
+min_instances = int(2)      # min_instances chose any number > 0
 
 #############################################################
 
@@ -139,13 +122,14 @@ custom_chart = pd.merge(custom_chart, temp_ranks, on='player_name')
 # bring in 'count', wins, and 'datagolf_rank', and 'rank_bin'
 temp_count = custom_chart.groupby('player_name',as_index=False)['sg_total'].count().sort_values('sg_total', ascending=False).rename(columns={'sg_total':'count'}).reset_index(drop=True)
 custom_chart = custom_chart.merge(temp_count, on='player_name', how = 'left')
-temp_bin = chart_data[['player_name',rank_bin]].drop_duplicates()#.sort_values('loser_key', ascending=False).rename(columns={'loser_key':'count'}).reset_index(drop=True)
+temp_bin = chart_data[['player_name',rank_bin]].drop_duplicates()
 custom_chart = custom_chart.merge(temp_bin, on='player_name', how = 'left')
 temp_wins = stats[(stats.finish_pos == 1) & (stats.round_num == 4)].groupby('player_name')['finish_pos'].count().sort_values(ascending=False)
 custom_chart = custom_chart.merge(temp_wins, on='player_name', how = 'left')
 custom_chart.rename(columns={'finish_pos':'career_wins'},inplace=True)
 custom_chart['career_wins'] = custom_chart['career_wins'].fillna(0)
 
+# chose statistic and make final dataframe
 temp_m = custom_chart.groupby('player_name',as_index=False)[['sg_total', 'post_sg_total']].mean()
 custom_chart = custom_chart.merge(temp_m, on='player_name', how = 'left').rename(columns = 
                                                                                  {'sg_total_x':'sg_total_round', 
@@ -153,13 +137,7 @@ custom_chart = custom_chart.merge(temp_m, on='player_name', how = 'left').rename
                                                                                   'post_sg_total_x':'post_sg_total_round',
                                                                                   'post_sg_total_y':'post_sg_total'}
                                                                                 )
-# calculate deltas
 custom_chart['delta_sg_total'] = custom_chart['post_sg_total'] - custom_chart['sg_total']
-# custom_chart['delta_sg_t2g'] = custom_chart['post_sg_t2g'] - custom_chart['sg_t2g']
-# custom_chart['delta_sg_ott'] = custom_chart['post_sg_ott'] - custom_chart['sg_ott']
-# custom_chart['delta_sg_app'] = custom_chart['post_sg_app'] - custom_chart['sg_app']
-# custom_chart['delta_sg_arg'] = custom_chart['post_sg_arg'] - custom_chart['sg_arg']
-# custom_chart['delta_sg_putt'] = custom_chart['post_sg_putt'] - custom_chart['sg_putt']
 
 # title formatting
 def format_title(title, subtitle=None, subtitle_font_size=16):
@@ -170,7 +148,10 @@ def format_title(title, subtitle=None, subtitle_font_size=16):
     return f"{title} <b>{stroke_delta} or Less</b><br>Min Occurances: {min_instances}  /  {subtitle} {custom_chart[custom_chart['count'] >= min_instances]['delta_sg_total'].count()}  /  Player Count: {custom_chart[custom_chart['count'] >= min_instances]['player_name'].nunique()}<br>"
 
 # graph
-fig = px.scatter(round(custom_chart[custom_chart['count'] >= min_instances].sort_values(rank_bin),2),
+fig = px.scatter(round(custom_chart[
+    (custom_chart['count'] >= min_instances)# & 
+    # ((custom_chart['delta_sg_total']>.24) | (custom_chart['delta_sg_total']<-.24))
+    ].sort_values(rank_bin),2),
                  x = 'sg_total',
                  y = 'post_sg_total',
                  title = format_title('STROKES BACK:', "Sample Size:"),
@@ -180,8 +161,8 @@ fig = px.scatter(round(custom_chart[custom_chart['count'] >= min_instances].sort
                  size_max = 20,
                  hover_name='player_name',
                  custom_data=['player_name', 'count','datagolf_rank','delta_sg_total','career_wins'],
-                 height = 675,
-                 width = 875
+                 height = 750,
+                 width = 900
                 )
 
 # format grids and lines
@@ -214,7 +195,7 @@ fig.update_traces(hovertemplate=
 
 app = dash.Dash()
 app.layout = html.Div([#html.Div('Hello Golf Fans'),
-             html.H1('SG Before and After a Tough Loss'),
+            #  html.H1('SG Before and After a Tough Loss'),
             #  html.Div(dcc.Dropdown(id='dropdown',options = [{'label':'A', 'value':'A'},{'label': 'B', 'value':'B'},{'lable': 'C', 'value':'C'}])),
              dcc.Graph(id='fig1',figure=fig)])
                                                                 

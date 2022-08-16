@@ -62,7 +62,7 @@ import datetime as dt
 
 stats = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/stats.csv')
 data = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/data.csv')
-# dg_rankings = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/dg_rankings.csv')
+dg_rankings = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/dg_rankings.csv')
 
 ################ CHART INPUTS #####################
 
@@ -76,7 +76,7 @@ min_instances = int(1)      # min_instances chose any number > 0
 
 chart_data = data[data.r4_delta <= stroke_delta].reset_index(drop=True)
 
-# chart_data.event_completed = pd.to_datetime(chart_data.event_completed)
+chart_data.event_completed = pd.to_datetime(chart_data.event_completed)
 chart_data['prior_date'] = chart_data['event_completed'] - pd.Timedelta(weeks=weeks_prior)
 chart_data['post_date'] = chart_data['event_completed'] + pd.Timedelta(weeks=weeks_after)
 

@@ -60,15 +60,15 @@ stats.event_completed = pd.to_datetime(stats.event_completed)
 
 data = losers_df.copy() # the 554 instances where a player was leading or within 2 strokes going into round 4 and lost
 
-# CHART INPUTS ##############################################
+################ CHART INPUTS #####################
 
 stroke_delta = int(1)       # stroke_delta chose 0, 1, or 2
 weeks_prior = int(40)       # weeks_prior chose any amount
 weeks_after = int(6)        # weeks_after chose any amount
-rank_bin = 'bin_40'        # rank_bin chose 'bin_40' or 'bin_100'
-min_instances = int(2)      # min_instances chose any number > 0
+rank_bin = 'bin_100'        # rank_bin chose 'bin_40' or 'bin_100'
+min_instances = int(1)      # min_instances chose any number > 0
 
-#############################################################
+###################################################
 
 chart_data = data[data.r4_delta <= stroke_delta].reset_index(drop=True)
 

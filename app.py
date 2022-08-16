@@ -6,59 +6,63 @@ import plotly.express as px
 import numpy as np
 import datetime as dt
 
-file_one_df = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/stats.csv')
-file_three_df = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/dg_rankings.csv')
+# file_one_df = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/stats.csv')
+# file_three_df = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/dg_rankings.csv')
 
-# cleanup 'finish_pos'
-stats = file_one_df.copy()
-stats['fin_text'] = pd.to_numeric(stats['fin_text'].str.replace("T",""), errors='coerce')
-stats.rename(columns={'fin_text':"finish_pos"}, inplace=True) 
+# # cleanup 'finish_pos'
+# stats = file_one_df.copy()
+# stats['fin_text'] = pd.to_numeric(stats['fin_text'].str.replace("T",""), errors='coerce')
+# stats.rename(columns={'fin_text':"finish_pos"}, inplace=True) 
 
-# make unique event identifier just in case it becomes handy later (concat year and event_id)
-# add score to par column
-stats['unique_event_id'] = stats['season'].astype(str) + stats['event_id'].astype(str)
-stats['score_to_par'] = stats['round_score'] - stats['course_par']
-stats.drop(stats[stats.round_score < 40].index, inplace=True)
+# # make unique event identifier just in case it becomes handy later (concat year and event_id)
+# # add score to par column
+# stats['unique_event_id'] = stats['season'].astype(str) + stats['event_id'].astype(str)
+# stats['score_to_par'] = stats['round_score'] - stats['course_par']
+# stats.drop(stats[stats.round_score < 40].index, inplace=True)
 
-# add player world rankings, current datagolf rankings, and skill estimate
-dg_rankings = file_three_df.copy()
-temp_ranks = dg_rankings[['player_name', 'owgr_rank', 'datagolf_rank', 'dg_skill_estimate']]
-stats = pd.merge(stats, temp_ranks, on='player_name')
+# # add player world rankings, current datagolf rankings, and skill estimate
+# dg_rankings = file_three_df.copy()
+# temp_ranks = dg_rankings[['player_name', 'owgr_rank', 'datagolf_rank', 'dg_skill_estimate']]
+# stats = pd.merge(stats, temp_ranks, on='player_name')
 
-non_stat_cols = ['event_name','unique_event_id','event_completed','player_name','round_num','round_score','finish_pos','datagolf_rank']
+# non_stat_cols = ['event_name','unique_event_id','event_completed','player_name','round_num','round_score','finish_pos','datagolf_rank']
 
-# leaderboard thru 3 rounds of all tournaments
-temp = stats[(stats.round_num < 4) & (stats.season > 2017)][non_stat_cols].sort_values(['event_completed','player_name','round_num','round_score'])
-temp['cum_sum'] = temp.groupby(['player_name','unique_event_id'])['round_score'].cumsum(axis=0)
-leaderboard_after_3 = temp[temp.round_num==3].sort_values(['unique_event_id', 'cum_sum']) # keeping for leaderboard thru 3 rounds
+# # leaderboard thru 3 rounds of all tournaments
+# temp = stats[(stats.round_num < 4) & (stats.season > 2017)][non_stat_cols].sort_values(['event_completed','player_name','round_num','round_score'])
+# temp['cum_sum'] = temp.groupby(['player_name','unique_event_id'])['round_score'].cumsum(axis=0)
+# leaderboard_after_3 = temp[temp.round_num==3].sort_values(['unique_event_id', 'cum_sum']) # keeping for leaderboard thru 3 rounds
 
-# # r4_delta column 
-temp = leaderboard_after_3.groupby('unique_event_id')[['unique_event_id','cum_sum']].min().rename(columns={'cum_sum':'cum_sum_min'}).reset_index(drop=True)
-leaderboard_deltas_after_3 = pd.merge(leaderboard_after_3,temp,on='unique_event_id')
-leaderboard_deltas_after_3['r4_delta'] = leaderboard_deltas_after_3.cum_sum - leaderboard_deltas_after_3.cum_sum_min
+# # # r4_delta column 
+# temp = leaderboard_after_3.groupby('unique_event_id')[['unique_event_id','cum_sum']].min().rename(columns={'cum_sum':'cum_sum_min'}).reset_index(drop=True)
+# leaderboard_deltas_after_3 = pd.merge(leaderboard_after_3,temp,on='unique_event_id')
+# leaderboard_deltas_after_3['r4_delta'] = leaderboard_deltas_after_3.cum_sum - leaderboard_deltas_after_3.cum_sum_min
 
-# data golf rankings bins by 100
-bins100 = [0, 100, 200, 300, 400, 500]
-labels100 = ['1-100', '101-200', '201-300', '301-400', '401-500']
-bins40 = [0, 40, 80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 500]
-labels40 = ['1-40', '41-80', '81-120', '121-160', '161-200', 
-            '201-240', '241-280', '281-320', '321-360', '361-400', 
-            '400-440', '441-500']
-stats['bin_40'] = pd.cut(stats['datagolf_rank'], bins=bins40, labels=labels40)
-stats['bin_100'] = pd.cut(stats['datagolf_rank'], bins=bins100, labels=labels100)
-leaderboard_deltas_after_3['bin_100'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins100, labels=labels100)
-leaderboard_deltas_after_3['bin_40'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins40, labels=labels40)
+# # data golf rankings bins by 100
+# bins100 = [0, 100, 200, 300, 400, 500]
+# labels100 = ['1-100', '101-200', '201-300', '301-400', '401-500']
+# bins40 = [0, 40, 80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 500]
+# labels40 = ['1-40', '41-80', '81-120', '121-160', '161-200', 
+#             '201-240', '241-280', '281-320', '321-360', '361-400', 
+#             '400-440', '441-500']
+# stats['bin_40'] = pd.cut(stats['datagolf_rank'], bins=bins40, labels=labels40)
+# stats['bin_100'] = pd.cut(stats['datagolf_rank'], bins=bins100, labels=labels100)
+# leaderboard_deltas_after_3['bin_100'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins100, labels=labels100)
+# leaderboard_deltas_after_3['bin_40'] = pd.cut(leaderboard_deltas_after_3['datagolf_rank'], bins=bins40, labels=labels40)
 
-# remove winners, whittle down to 2 strokes delta maximum
-losers_df = leaderboard_deltas_after_3[(leaderboard_deltas_after_3.r4_delta <= 2) & (leaderboard_deltas_after_3.finish_pos > 1)].reset_index(drop=True)
+# # remove winners, whittle down to 2 strokes delta maximum
+# losers_df = leaderboard_deltas_after_3[(leaderboard_deltas_after_3.r4_delta <= 2) & (leaderboard_deltas_after_3.finish_pos > 1)].reset_index(drop=True)
 
-# # remove now un-needed columns and fix dtypes
-losers_df.drop(columns=['round_score','round_num','cum_sum','cum_sum_min'], axis=1, inplace=True)
-losers_df.event_completed = pd.to_datetime(losers_df.event_completed)
-losers_df.finish_pos = losers_df.finish_pos.astype('int64')
-stats.event_completed = pd.to_datetime(stats.event_completed)
+# # # remove now un-needed columns and fix dtypes
+# losers_df.drop(columns=['round_score','round_num','cum_sum','cum_sum_min'], axis=1, inplace=True)
+# losers_df.event_completed = pd.to_datetime(losers_df.event_completed)
+# losers_df.finish_pos = losers_df.finish_pos.astype('int64')
+# stats.event_completed = pd.to_datetime(stats.event_completed)
 
-data = losers_df.copy() # the 554 instances where a player was leading or within 2 strokes going into round 4 and lost
+# data = losers_df.copy() # the 554 instances where a player was leading or within 2 strokes going into round 4 and lost
+
+stats = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/stats.csv')
+data = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/data.csv')
+# dg_rankings = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/round4/main/dg_rankings.csv')
 
 ################ CHART INPUTS #####################
 
@@ -72,6 +76,7 @@ min_instances = int(1)      # min_instances chose any number > 0
 
 chart_data = data[data.r4_delta <= stroke_delta].reset_index(drop=True)
 
+# chart_data.event_completed = pd.to_datetime(chart_data.event_completed)
 chart_data['prior_date'] = chart_data['event_completed'] - pd.Timedelta(weeks=weeks_prior)
 chart_data['post_date'] = chart_data['event_completed'] + pd.Timedelta(weeks=weeks_after)
 
@@ -198,7 +203,7 @@ fig.update_traces(hovertemplate=
                     <br>SG Before:%{x:>20}<br>SG After:%{y:>23}</b> \
                     <br><b>Change:%{customdata[3]:>23}</b>")                    
 
-###################################################################################################
+#####  app   ###########################################################################################
 
 app = dash.Dash()
 app.layout = html.Div([#html.Div('Hello Golf Fans'),

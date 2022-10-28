@@ -12,7 +12,7 @@ dg_rankings = pd.read_csv(r'https://raw.githubusercontent.com/mikejackson35/roun
 
 ################ CHART INPUTS #####################
 
-stroke_delta = int(1)       # stroke_delta chose 0, 1, or 2
+stroke_delta = int(0)       # stroke_delta chose 0, 1, or 2
 weeks_prior = int(36)       # weeks_prior chose any amount
 weeks_after = int(4)        # weeks_after chose any amount
 rank_bin = 'bin_100'        # rank_bin chose 'bin_40' or 'bin_100'
@@ -168,24 +168,26 @@ def chart1():
         subtitle = f'<span style="font-size: {subtitle_font_size}px;">{subtitle}</span>'
         return f"{title} <b>{stroke_delta} or Less</b><br>Min Occurances: {min_instances}  /  {subtitle} {custom_chart[custom_chart['count'] >= min_instances]['delta_sg_total'].count()}  /  Player Count: {custom_chart[custom_chart['count'] >= min_instances]['player_name'].nunique()}<br>"
 
-    # graph
-    fig = px.scatter(round(custom_chart[
-        (custom_chart['count'] >= min_instances)# &
-        # ((custom_chart['delta_sg_total']>.99) | (custom_chart['delta_sg_total']<-.99))
-        ].sort_values(rank_bin),2),
+        # graph
+    fig = px.scatter(round(custom_chart
+                        [(custom_chart['count'] >= min_instances) 
+    #                         & (custom_chart['delta_sg_total']>.49) 
+    #                         | (custom_chart['delta_sg_total']<-.49)
+                        ]
+                        .sort_values(rank_bin)
+                        ,2),
                     x = 'sg_total',
                     y = 'post_sg_total',
                     title = format_title('STROKES BACK:', "Sample Size:"),
                     template = 'seaborn',
-                    color = rank_bin,
+                    color_discrete_sequence=px.colors.qualitative.Antique,
+                    color = 'bin_100',
                     size = 'count',
                     size_max = 20,
                     hover_name='player_name',
-                    custom_data=['player_name', 'count','datagolf_rank','delta_sg_total'],
-                    height = 700,
-                    width = 900,
-                    #  marginal_x='rug',
-                    #  marginal_y='rug'
+                    custom_data=['player_name', 'count','datagolf_rank','delta_sg_total','career_wins'],
+                    height = 800,
+                    width = 1000
                     )
 
     # format grids and lines
@@ -203,16 +205,14 @@ def chart1():
     fig.update_layout(legend_title="Datagolf Rank")
 
     # format hover labels
-    fig.update_layout(hoverlabel=dict(font_size=15,font_family="Rockwell"))
+    fig.update_layout(hoverlabel=dict(font_size=15,font_family="Times New Roman"))
+
     fig.update_traces(hovertemplate=
                         "<b>%{customdata[0]}</b> \
                         <br>Count: %{customdata[1]}</b> \
                         <br>=================</b> \
-                        <br>SG Before:%{x:>20}<br>SG After:%{y:>23}</b> \
-                        <br><b>Change:%{customdata[3]:>23}</b> \
-                        <br>=================</b>") 
-                        # <br>Wins Since 2017:%{customdata[4]:>10}</b> \
-                        # <br>Data Golf Rank:%{customdata[2]:>13}")
+                        <br>SG Before:%{x:>19}<br>SG After:%{y:>22}</b> \
+                        <br><b>Change:%{customdata[3]:>23}</b>") 
 
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     header="Fruit in North America"
@@ -220,4 +220,4 @@ def chart1():
     A academic study of the number of apples, oranges and bananas in the cities of
     San Francisco and Montreal would probably not come up with this chart.
     """
-    return render_template('index1.html', graphJSON=graphJSON, header=header,description=description)                                                                                                                                                                                    
+    return render_template('index.html', graphJSON=graphJSON, header=header,description=description)                                                                                                                                                                                    
